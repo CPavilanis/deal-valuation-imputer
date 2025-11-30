@@ -52,7 +52,10 @@ def impute_missing_targets_rf(
     # Build feature column list
     logcols = [col + '_log' for col in numerical_to_log]
     categorical_expanded = [c for c in df.columns if any(c.startswith(cat + '_') for cat in categorical)]
-    feature_cols = numerical + logcols + categorical_expanded
+    # If a numeric column was log-transformed, drop the original raw column to avoid
+    # duplication/confusion between raw and log features.
+    numerical_clean = [col for col in numerical if col not in numerical_to_log]
+    feature_cols = numerical_clean + logcols + categorical_expanded
 
     # Ensure all feature columns exist
     missing_features = [col for col in feature_cols if col not in df.columns]
@@ -145,17 +148,6 @@ def impute_target_by_similarity(
                 mask &= df[col].between(lower, upper)
         else:
             raise ValueError(f"Numerical column '{col}' not found in DataFrame.")
-    
-    # # Numerical: within range
-    # for col in numerical_cols:
-    #     if col in df.columns:
-    #         val = row[col]
-    #         rng = range_dict.get(col, 0.1)
-    #         lower = val * (1 - rng)
-    #         upper = val * (1 + rng)
-    #         mask &= df[col].between(lower, upper)
-    #     else:
-    #         raise ValueError(f"Numerical column '{col}' not found in DataFrame.")
 
     # Exclude the row itself and rows with missing target
     mask &= df[target_col].notnull()
