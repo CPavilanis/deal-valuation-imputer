@@ -1,22 +1,36 @@
-Impute PostValuation
+## Imputation Utilities
 
-This repository contains a small script to impute missing `PostValuation` values in `deals.parquet`.
+This module provides functions for imputing missing target values in deal data.
 
-Usage
+### Functions
 
-- Install dependencies into the project virtualenv or system Python:
+- `impute_missing_targets_rf(df, numerical, numerical_to_log, categorical, target_col)`
+  - Imputes missing target values using a RandomForestRegressor.
+  - Returns a DataFrame with imputed values and the trained model.
 
-  /Users/c0p0frj/Documents/deal-valuation-imputer/.venv/bin/python -m pip install -r requirements.txt
+- `impute_target_by_similarity(row, df, categorical_cols, numerical_cols, range_dict, target_col)`
+  - Imputes a missing target value for a row using similar rows in the DataFrame (based on categorical and numerical similarity).
 
-- Run the imputer:
+### Example Usage
 
-  /Users/c0p0frj/Documents/deal-valuation-imputer/.venv/bin/python scripts/impute_postvaluation.py
+```python
+from scripts.impute_postvaluation import impute_missing_targets_rf, impute_target_by_similarity
 
-Outputs
+# Impute missing PostValuation using RandomForest
+df_imputed, model = impute_missing_targets_rf(
+    df,
+    numerical=['DealSize'],
+    numerical_to_log=['Revenue'],
+    categorical=['Sector', 'Stage'],
+    target_col='PostValuation'
+)
 
-- `deals_imputed.parquet` — same table with `PostValuation` filled where previously missing.
-
-Notes & assumptions
-
-- A RandomForestRegressor is trained on numeric and a few categorical features. The target is log1p transformed during training and inverse-transformed for predictions.
-- This is a pragmatic baseline. Improvements can include better feature engineering, cross-validation, and using gradient boosting (LightGBM/XGBoost) or stacking.
+# Impute a single row by similarity
+imputed_value = impute_target_by_similarity(
+    row,
+    df,
+    categorical_cols=['Sector', 'Stage'],
+    numerical_cols=['DealSize'],
+    range_dict={'DealSize': 0.2},
+    target_col='PostValuation'
+)
